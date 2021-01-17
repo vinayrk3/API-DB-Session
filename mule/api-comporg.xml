@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="784b8913-0ee9-4f09-8fd4-3e64a350ddd2" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="726ae724-b409-4b5e-ada9-faabe2c64271" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" database="organisation" />
+	</db:config>
+	<flow name="api-comporgFlow" doc:id="3882a714-56dc-4ff7-a437-00d2e5a0fb4b" >
+		<http:listener doc:name="Listener" doc:id="ca4e0834-70d9-4055-8c4a-efbf82acaa17" config-ref="HTTP_Listener_config" path="/company"/>
+		<db:select doc:name="Select" doc:id="780bdfdf-73f1-42f1-95fc-b521d4eee4b4" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM company]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="761db838-9177-40d0-926a-3fb7f1aa8de3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="api-comporgFlow1" doc:id="154cd8dd-0d7a-4697-9190-e70d4c6e6633" >
+		<http:listener doc:name="Listener" doc:id="57e5e777-3151-44e3-9d7f-ee67e96f358f" config-ref="HTTP_Listener_config" path="/company/{id}" allowedMethods="POST"/>
+		<db:select doc:name="SelectWithId" doc:id="c975be4f-deac-4b94-83a5-fe3faa01cf1f" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM company WHERE id = :id;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id: attributes.uriParams.id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="a6254cef-1276-4453-9038-b4fc8e278adf" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="api-comporgFlow2" doc:id="b997de17-6b07-4a4f-a5f8-53e9784f60e5" >
+		<http:listener doc:name="Listener" doc:id="c4f0a1ba-a69b-4f46-a526-693a9e8ce8d8" config-ref="HTTP_Listener_config" path="/insertdata" allowedMethods="POST"/>
+		<db:insert doc:name="Insert" doc:id="d2502db0-33ae-4c9c-9029-e9704059ed34" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO company (id, name) values (:id, :name);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id: payload.id,
+	name: payload.name 
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="ced84bf2-1812-4dbb-971a-332c42a4465e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="api-comporgFlow-Update" doc:id="897b3d63-41fa-42ba-9fce-b94a912dccf0" >
+		<http:listener doc:name="Update" doc:id="6f8e41a3-a450-46d5-b7a7-51a5ad1348e1" config-ref="HTTP_Listener_config" path="/update" allowedMethods="PATCH"/>
+		<db:update doc:name="Update" doc:id="7260cb3a-5e97-4f14-8147-85936197c4eb" config-ref="Database_Config">
+			<db:sql ><![CDATA[UPDATE company SET name = :name WHERE id = :id;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id: payload.id,
+	name: payload.name
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="36c4b1fe-f5ae-4082-b4de-0baafa641891" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="api-comporgFlow3" doc:id="8c7c4f43-3558-4a2a-a0bc-9046b25b07b5" >
+		<http:listener doc:name="Delete" doc:id="c9efb159-5d95-4433-881e-74169b61434b" config-ref="HTTP_Listener_config" path="/deletecompany/{id}" allowedMethods="DELETE"/>
+		<db:delete doc:name="Delete" doc:id="052fdabf-0f6d-4560-9d67-b52147917ad4" config-ref="Database_Config">
+			<db:sql ><![CDATA[DELETE FROM company where id = :id;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id :attributes.uriParams.id
+}]]]></db:input-parameters>
+		</db:delete>
+		<ee:transform doc:name="Transform Message" doc:id="56820806-f5c0-4835-8a06-2aaeb4b8d9aa" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
